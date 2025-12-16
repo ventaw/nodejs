@@ -2,7 +2,7 @@ import { Client, config, Template, Sandbox } from "./src/index";
 
 // Configure default client
 config.apiKey = "vnt_5Pw1Dh0cLsMybkJZXHJDXpz8aOuutEPXWh_sLS2TcCc";
-config.apiBase = "http://localhost:8000/v1";
+config.apiBase = "https://ventaw.mmogomedia.com/v1";
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 

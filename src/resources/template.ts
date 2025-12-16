@@ -25,9 +25,9 @@ export class Template {
 
     public static async list(): Promise<Template[]> {
         const client = getDefaultClient();
-        const data = await client.request("GET", "/templates");
+        const data = await client.request<{ templates: TemplateData[] }>("GET", "/templates");
         // API returns {"templates": [...], "total": ...}
         const items = data.templates || [];
-        return items.map((item: any) => new Template(item));
+        return items.map((item) => new Template(item));
     }
 }

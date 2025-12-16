@@ -94,3 +94,33 @@ files.forEach(file => {
 // Delete a file
 await sandbox.files.delete("/app/data/config.json");
 ```
+
+## Error Handling
+
+The SDK throws custom error types that you can catch and handle.
+
+```typescript
+import { APIError, AuthenticationError, APIConnectionError } from "ventaw-sdk";
+
+try {
+  await sandbox.files.read("non-existent-file");
+} catch (error) {
+  if (error instanceof AuthenticationError) {
+    console.error("Invalid API Key");
+  } else if (error instanceof APIError) {
+    console.error(`API Error (${error.statusCode}): ${error.message}`);
+  } else if (error instanceof APIConnectionError) {
+    console.error("Network invalid or Ventaw is down");
+  }
+}
+```
+
+### Common Failure Modes
+
+- **AuthenticationError (401)**: The API key provided is invalid or missing. Check `config.apiKey`.
+- **APIError (4xx/5xx)**: The API request returned a failure. 
+  - `404`: Resource (sandbox, file, template) not found.
+  - `400`: Bad request (e.g., invalid parameters).
+  - `500`: Internal server error.
+- **APIConnectionError**: Could not connect to the API server (network down, timeout, or DNS issue).
+

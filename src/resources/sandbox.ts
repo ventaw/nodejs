@@ -52,22 +52,22 @@ export class Sandbox {
             vcpu_count: vcpu,
             mem_size_mib: memory,
         };
-        const data = await client.request("POST", "/sandboxes", payload);
+        const data = await client.request<SandboxData>("POST", "/sandboxes", payload);
         return new Sandbox(data);
     }
 
     public static async get(id: string): Promise<Sandbox> {
         const client = getDefaultClient();
-        const data = await client.request("GET", `/sandboxes/${id}`);
+        const data = await client.request<SandboxData>("GET", `/sandboxes/${id}`);
         return new Sandbox(data);
     }
 
     public static async list(): Promise<Sandbox[]> {
         const client = getDefaultClient();
-        const data = await client.request("GET", "/sandboxes");
+        const data = await client.request<SandboxData[]>("GET", "/sandboxes");
         // Assuming API returns array as per Python SDK comment
         return (Array.isArray(data) ? data : []).map(
-            (item: any) => new Sandbox(item)
+            (item) => new Sandbox(item)
         );
     }
 
@@ -83,7 +83,7 @@ export class Sandbox {
         if (!this.id) {
             throw new Error("Sandbox ID is missing.");
         }
-        const data = await this._client.request("GET", `/sandboxes/${this.id}`);
+        const data = await this._client.request<SandboxData>("GET", `/sandboxes/${this.id}`);
         Object.assign(this, data);
     }
 }
