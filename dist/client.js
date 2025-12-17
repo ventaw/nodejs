@@ -10,17 +10,23 @@ const error_1 = require("./error");
 // Global configuration storage
 exports.config = {
     apiKey: undefined,
-    apiBase: "http://localhost:8000/v1",
+    apiBase: "https://ventaw.mmogomedia.com/v1",
+    timeout: 30000,
+    maxRetries: 3,
 };
 class Client {
     constructor(options = {}) {
+        var _a, _b;
         this.apiKey = options.apiKey || exports.config.apiKey;
         this.baseUrl = (options.baseUrl || exports.config.apiBase).replace(/\/$/, "");
+        const timeout = (_a = options.timeout) !== null && _a !== void 0 ? _a : exports.config.timeout;
+        this.maxRetries = (_b = options.maxRetries) !== null && _b !== void 0 ? _b : exports.config.maxRetries;
         if (!this.apiKey) {
             throw new error_1.AuthenticationError("No API key provided. Set config.apiKey or pass apiKey to Client constructor.");
         }
         this.session = axios_1.default.create({
             baseURL: this.baseUrl,
+            timeout: timeout,
             headers: {
                 "X-API-Key": this.apiKey,
                 "Content-Type": "application/json",
@@ -31,19 +37,33 @@ class Client {
         this.session.interceptors.response.use((response) => response, (error) => this.handleError(error));
     }
     async request(method, path, data, params) {
-        try {
-            const response = await this.session.request({
-                method,
-                url: path,
-                data,
-                params,
-            });
-            return response.data;
+        let lastError;
+        for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
+            try {
+                const response = await this.session.request({
+                    method,
+                    url: path,
+                    data,
+                    params,
+                });
+                return response.data;
+            }
+            catch (error) {
+                lastError = error;
+                // Do not retry on AuthenticationError or 4xx errors (except maybe 429)
+                if (error instanceof error_1.AuthenticationError || (error instanceof error_1.APIError && error.statusCode && error.statusCode >= 400 && error.statusCode < 500 && error.statusCode !== 429)) {
+                    throw error;
+                }
+                // If it's the last attempt, throw
+                if (attempt === this.maxRetries) {
+                    throw error;
+                }
+                // Wait before retrying (exponential backoff: 500ms, 1000ms, 2000ms...)
+                const delay = 500 * Math.pow(2, attempt);
+                await new Promise((resolve) => setTimeout(resolve, delay));
+            }
         }
-        catch (error) {
-            // Error is already handled by interceptor, but re-throw just in case
-            throw error;
-        }
+        throw lastError;
     }
     handleError(error) {
         if (axios_1.default.isAxiosError(error)) {
@@ -66,6 +86,12 @@ class Client {
             else {
                 throw new error_1.APIConnectionError(`Request setup error: ${error.message}`);
             }
+        }
+        // If it's already one of our errors (re-thrown), just throw it
+        // Assuming VentawError is a base class for APIError, APIConnectionError, AuthenticationError
+        // or that it will be defined/imported elsewhere.
+        if (error instanceof error_1.APIError || error instanceof error_1.APIConnectionError || error instanceof error_1.AuthenticationError) {
+            throw error;
         }
         throw new error_1.APIConnectionError(`Unknown error: ${error}`);
     }
