@@ -11,7 +11,7 @@ export interface ClientOptions {
 // Global configuration storage
 export const config = {
     apiKey: undefined as string | undefined,
-    apiBase: "https://ventaw.mmogomedia.com/v1",
+    apiBase: "https://api.ventaw.com/v1",
     timeout: 30000,
     maxRetries: 3,
 };
@@ -55,7 +55,8 @@ export class Client {
         method: "GET" | "POST" | "PUT" | "DELETE",
         path: string,
         data?: any,
-        params?: any
+        params?: any,
+        options?: any
     ): Promise<T> {
         let lastError: any;
         for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
@@ -65,6 +66,7 @@ export class Client {
                     url: path,
                     data,
                     params,
+                    ...options,
                 });
                 return response.data;
             } catch (error) {

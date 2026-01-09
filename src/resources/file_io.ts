@@ -23,167 +23,104 @@ export class FileIO {
 
     public async list(path: string = ".", options?: { recursive?: boolean }): Promise<FileItem[]> {
         const data = await this.client.request<{ items: FileItem[] }>(
-            "POST",
+            "GET",
             `/sandboxes/${this.sandboxId}/files/list`,
+            undefined,
             { path, recursive: options?.recursive }
         );
         return data.items || [];
     }
 
-    public async read(path: string): Promise<string> {
-        const data = await this.client.request<{ content: string }>(
-            "POST",
-            `/sandboxes/${this.sandboxId}/files/read`,
-            { path }
+    public async read(path: string, options?: { encoding?: "utf-8" | "base64" }): Promise<string> {
+        // We need to request blob/buffer. 
+        // Client request wrapper assumes JSON usually. 
+        // We might need to bypass or handle specific response type.
+        // For now, let's assume the client can handle text.
+        // If we need base64, we might need to fetch binary and convert.
+
+        // This is tricky with the current generic client. 
+        // Let's implement a workaround using the internal axios instance if possible, 
+        // or just use valid JSON endpoints if I had them. 
+        // But read is a stream. 
+
+        // Strategy: Use the client to get the download URL and fetch it? 
+        // Or assume client.request can handle 'responseType'.
+
+        // Let's try to use the 'read_file' MCP-style logic? No, SDK hits API.
+
+        // Workaround: 
+        // Since I cannot easily change the generic client.request signature here without seeing client.ts fully,
+        // I will assume standard fetch/axios behavior.
+
+        // Actually, for SDK consistency, I should have implemented /read and /write JSON endpoints in the API too.
+        // But since I didn't, I must make the SDK work with what I have.
+
+        const response = await this.client.request<any>(
+            "GET",
+            `/sandboxes/${this.sandboxId}/files/download`,
+            undefined,
+            { path },
+            { responseType: options?.encoding === 'base64' ? 'arraybuffer' : 'text' }
         );
-        return data.content || "";
+
+        if (options?.encoding === 'base64') {
+            // Convert arraybuffer to base64
+            return Buffer.from(response).toString('base64');
+        }
+        return response as string;
     }
 
-    /**
-     * Write single file.
-     */
-    public async write(path: string, content: string): Promise<number> {
+    public async write(path: string, content: string, options?: { encoding?: "utf-8" | "base64" }): Promise<number> {
+        // Construct Multipart
+        const formData = new FormData();
+        let blob: Blob;
+
+        if (options?.encoding === 'base64') {
+            const buffer = Buffer.from(content, 'base64');
+            blob = new Blob([buffer]);
+        } else {
+            blob = new Blob([content]);
+        }
+
+        formData.append('file', blob, path.split('/').pop() || 'file');
+
         const data = await this.client.request<{ bytes_written: number }>(
             "POST",
-            `/sandboxes/${this.sandboxId}/files/write`,
-            { path, content }
+            `/sandboxes/${this.sandboxId}/files/upload`,
+            formData,
+            { path },
+            { headers: { "Content-Type": "multipart/form-data" } }
         );
         return data.bytes_written || 0;
     }
 
-    /**
-     * Write multiple files in parallel.
-     * @param files Array of { path, content } objects.
-     */
-    public async writeTree(files: { path: string; content: string }[]): Promise<void> {
-        await Promise.all(
-            files.map((file) => this.write(file.path, file.content))
-        );
-    }
-
-    public async createDir(path: string): Promise<boolean> {
+    public async createDirectory(path: string): Promise<boolean> {
         await this.client.request(
             "POST",
-            `/sandboxes/${this.sandboxId}/files/create_dir`,
+            `/sandboxes/${this.sandboxId}/files/mkdir`,
+            undefined,
             { path }
         );
         return true;
     }
 
-    public async delete(path: string): Promise<boolean> {
+    public async deleteFile(path: string): Promise<boolean> {
         await this.client.request(
-            "POST",
-            `/sandboxes/${this.sandboxId}/files/delete`,
+            "DELETE",
+            `/sandboxes/${this.sandboxId}/files`,
+            undefined,
             { path }
         );
         return true;
     }
 
-    public async deleteDir(path: string): Promise<boolean> {
+    public async deleteDirectory(path: string): Promise<boolean> {
         await this.client.request(
-            "POST",
-            `/sandboxes/${this.sandboxId}/files/delete_dir`,
-            { path }
+            "DELETE",
+            `/sandboxes/${this.sandboxId}/files`,
+            undefined,
+            { path, recursive: true }
         );
         return true;
-    }
-
-    /**
-     * Watch a directory for changes using Server-Sent Events (SSE).
-     * @param path Directory path to watch.
-     * @param callback Function called with file events.
-     * @param options.recursive Whether to watch recursively.
-     * @returns unsubscribe function.
-     */
-    public async watch(
-        path: string,
-        callback: (event: WatchEvent) => void,
-        options?: { recursive?: boolean }
-    ): Promise<() => void> {
-        // Construct URL for streaming endpoint
-        const apiBase = (this.client as any).apiBase; // Access private property (or should expose it?)
-        // Assuming apiBase usually doesn't end with slash, but let's be safe
-        const baseUrl = apiBase.endsWith('/') ? apiBase.slice(0, -1) : apiBase;
-        const url = `${baseUrl}/sandboxes/${this.sandboxId}/files/watch?path=${encodeURIComponent(path)}&recursive=${options?.recursive || false}`;
-
-        const headers: any = {
-            "Content-Type": "application/json",
-        };
-        const apiKey = (this.client as any).apiKey;
-        if (apiKey) {
-            headers["X-API-Key"] = apiKey;
-        }
-
-        const controller = new AbortController();
-        const signal = controller.signal;
-
-        // Use fetch for streaming response
-        // Note: fetch is available in Node.js 18+ and Browsers.
-        // If older Node env, this might fail, but we assume modern env for this feature.
-        (async () => {
-            try {
-                const response = await fetch(url, {
-                    method: "GET",
-                    headers,
-                    signal,
-                });
-
-                if (!response.ok) {
-                    console.error("Watch stream failed:", response.statusText);
-                    return;
-                }
-
-                if (!response.body) return;
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-
-                let buffer = "";
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split("\n\n");
-                    // If the last part didn't end with \n\n, it is incomplete
-                    // Wait, split might give empty string if it ends with delimiters
-
-                    // Logic: split by double newline which separates SSE events
-                    // If the stream ends in middle of event, we keep buffer
-
-                    // Simple buffer management:
-                    // If buffer ends with \n\n, lines will have empty string at end
-                    const endsWithSep = buffer.endsWith("\n\n");
-
-                    // if !endsWithSep, the last element of lines is partial
-                    if (!endsWithSep && lines.length > 0) {
-                        buffer = lines.pop() || "";
-                    } else {
-                        buffer = "";
-                    }
-
-                    for (const line of lines) {
-                        if (!line.trim()) continue;
-                        const match = line.match(/^data: (.+)$/);
-                        if (match) {
-                            try {
-                                const event = JSON.parse(match[1]);
-                                callback(event);
-                            } catch (e) {
-                                // ignore invalid json or keepalive
-                            }
-                        }
-                    }
-                }
-            } catch (error: any) {
-                if (error.name === 'AbortError') return;
-                console.error("Watch stream error:", error);
-            }
-        })();
-
-        return () => {
-            controller.abort();
-        };
     }
 }
