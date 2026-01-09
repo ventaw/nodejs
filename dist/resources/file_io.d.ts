@@ -16,30 +16,13 @@ export declare class FileIO {
     list(path?: string, options?: {
         recursive?: boolean;
     }): Promise<FileItem[]>;
-    read(path: string): Promise<string>;
-    /**
-     * Write single file.
-     */
-    write(path: string, content: string): Promise<number>;
-    /**
-     * Write multiple files in parallel.
-     * @param files Array of { path, content } objects.
-     */
-    writeTree(files: {
-        path: string;
-        content: string;
-    }[]): Promise<void>;
-    createDir(path: string): Promise<boolean>;
-    delete(path: string): Promise<boolean>;
-    deleteDir(path: string): Promise<boolean>;
-    /**
-     * Watch a directory for changes using Server-Sent Events (SSE).
-     * @param path Directory path to watch.
-     * @param callback Function called with file events.
-     * @param options.recursive Whether to watch recursively.
-     * @returns unsubscribe function.
-     */
-    watch(path: string, callback: (event: WatchEvent) => void, options?: {
-        recursive?: boolean;
-    }): Promise<() => void>;
+    read(path: string, options?: {
+        encoding?: "utf-8" | "base64";
+    }): Promise<string>;
+    write(path: string, content: string, options?: {
+        encoding?: "utf-8" | "base64";
+    }): Promise<number>;
+    createDirectory(path: string): Promise<boolean>;
+    deleteFile(path: string): Promise<boolean>;
+    deleteDirectory(path: string): Promise<boolean>;
 }

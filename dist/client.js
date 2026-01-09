@@ -10,7 +10,7 @@ const error_1 = require("./error");
 // Global configuration storage
 exports.config = {
     apiKey: undefined,
-    apiBase: "https://ventaw.mmogomedia.com/v1",
+    apiBase: "https://api.ventaw.com/v1",
     timeout: 30000,
     maxRetries: 3,
 };
@@ -36,7 +36,7 @@ class Client {
         // Add interceptor for error handling
         this.session.interceptors.response.use((response) => response, (error) => this.handleError(error));
     }
-    async request(method, path, data, params) {
+    async request(method, path, data, params, options) {
         let lastError;
         for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
             try {
@@ -45,6 +45,7 @@ class Client {
                     url: path,
                     data,
                     params,
+                    ...options,
                 });
                 return response.data;
             }

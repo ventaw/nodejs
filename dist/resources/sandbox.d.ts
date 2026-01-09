@@ -24,4 +24,27 @@ export declare class Sandbox {
     static list(): Promise<Sandbox[]>;
     delete(): Promise<boolean>;
     refresh(): Promise<void>;
+    private _mcpPost;
+    start(useMcp?: boolean): Promise<void>;
+    pause(useMcp?: boolean): Promise<void>;
+    terminate(useMcp?: boolean): Promise<void>;
+    createSshToken(ttlMinutes?: number): Promise<any>;
+    listSshTokens(): Promise<any>;
+    revokeSshToken(token: string): Promise<void>;
+    execute(code: string, language?: string, useMcp?: boolean): Promise<any>;
+    createPty(command?: string, cwd?: string, cols?: number, rows?: number): Promise<any>;
+    sendPtyInput(ptyId: string, data: string): Promise<any>;
+    resizePty(ptyId: string, cols: number, rows: number): Promise<any>;
+    getPtyLogs(ptyId: string, offset?: number): Promise<any>;
+    deletePty(ptyId: string): Promise<any>;
+    listSessions(): Promise<any>;
+    createSession(command: string, cwd?: string, name?: string): Promise<any>;
+    getSessionLogs(sessionId: string, offset?: number): Promise<any>;
+    deleteSession(sessionId: string): Promise<any>;
+    get filesClient(): FileIO;
+    listFiles(path?: string, recursive?: boolean): Promise<import("./file_io").FileItem[]>;
+    readFile(path: string, encoding?: "utf-8" | "base64", useMcp?: boolean): Promise<any>;
+    writeFile(path: string, content: string, encoding?: "utf-8" | "base64", useMcp?: boolean): Promise<number | true>;
+    createDir(path: string): Promise<boolean>;
+    deleteFileOrDir(path: string, recursive?: boolean): Promise<boolean>;
 }
