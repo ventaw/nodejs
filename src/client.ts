@@ -38,9 +38,9 @@ export class Client {
             baseURL: this.baseUrl,
             timeout: timeout,
             headers: {
-                "X-API-Key": this.apiKey,
+                "Authorization": `Bearer ${this.apiKey}`,
                 "Content-Type": "application/json",
-                "User-Agent": "VentawJsSDK/0.1.0",
+                "User-Agent": "VentawJsSDK/0.1.2",
             },
         });
 
