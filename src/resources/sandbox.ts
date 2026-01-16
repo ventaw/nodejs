@@ -216,4 +216,75 @@ export class Sandbox {
         if (recursive) return this.files.deleteDirectory(path);
         return this.files.deleteFile(path);
     }
+
+    // Metrics and Logs
+    public async getMetrics(limit: number = 100): Promise<any[]> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/metrics`, undefined, { limit });
+    }
+
+    public async getMetricsSummary(): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/metrics/summary`);
+    }
+
+    public async getLogs(limit: number = 100): Promise<any[]> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/logs`, undefined, { limit });
+    }
+
+    // Update
+    public async update(options: {
+        name?: string;
+        startupCommand?: string;
+        internetEnabled?: boolean;
+        vpcId?: string;
+        defaultPort?: number;
+    }): Promise<boolean> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        const payload: any = {};
+        if (options.name !== undefined) payload.name = options.name;
+        if (options.startupCommand !== undefined) payload.startup_command = options.startupCommand;
+        if (options.internetEnabled !== undefined) payload.internet_enabled = options.internetEnabled;
+        if (options.vpcId !== undefined) payload.vpc_id = options.vpcId;
+        if (options.defaultPort !== undefined) payload.default_port = options.defaultPort;
+
+        const data = await this._client.request("PATCH", `/sandboxes/${this.id}`, payload);
+        Object.assign(this, data);
+        return true;
+    }
+
+    // Git operations
+    public async gitClone(repoUrl: string, targetDir: string): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("POST", `/sandboxes/${this.id}/git/clone`, {
+            repo_url: repoUrl,
+            target_dir: targetDir
+        });
+    }
+
+    public async gitStatus(): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("POST", `/sandboxes/${this.id}/git/status`);
+    }
+
+    public async gitPull(): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("POST", `/sandboxes/${this.id}/git/pull`);
+    }
+
+    // Advanced file operations
+    public async grep(pattern: string, path: string = "/", recursive: boolean = true): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("POST", `/sandboxes/${this.id}/files/grep`, {
+            pattern,
+            path,
+            recursive
+        });
+    }
+
+    public async getFileTree(path: string = "/"): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/files/tree`, undefined, { path });
+    }
 }

@@ -44,7 +44,22 @@ export declare class Sandbox {
     get filesClient(): FileIO;
     listFiles(path?: string, recursive?: boolean): Promise<import("./file_io").FileItem[]>;
     readFile(path: string, encoding?: "utf-8" | "base64", useMcp?: boolean): Promise<any>;
-    writeFile(path: string, content: string, encoding?: "utf-8" | "base64", useMcp?: boolean): Promise<number | true>;
+    writeFile(path: string, content: string, encoding?: "utf-8" | "base64", useMcp?: boolean): Promise<true | void>;
     createDir(path: string): Promise<boolean>;
     deleteFileOrDir(path: string, recursive?: boolean): Promise<boolean>;
+    getMetrics(limit?: number): Promise<any[]>;
+    getMetricsSummary(): Promise<any>;
+    getLogs(limit?: number): Promise<any[]>;
+    update(options: {
+        name?: string;
+        startupCommand?: string;
+        internetEnabled?: boolean;
+        vpcId?: string;
+        defaultPort?: number;
+    }): Promise<boolean>;
+    gitClone(repoUrl: string, targetDir: string): Promise<any>;
+    gitStatus(): Promise<any>;
+    gitPull(): Promise<any>;
+    grep(pattern: string, path?: string, recursive?: boolean): Promise<any>;
+    getFileTree(path?: string): Promise<any>;
 }

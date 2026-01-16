@@ -21,8 +21,13 @@ export declare class FileIO {
     }): Promise<string>;
     write(path: string, content: string, options?: {
         encoding?: "utf-8" | "base64";
-    }): Promise<number>;
+    }): Promise<void>;
+    createDir(path: string): Promise<boolean>;
     createDirectory(path: string): Promise<boolean>;
+    delete(path: string, options?: {
+        recursive?: boolean;
+    }): Promise<boolean>;
     deleteFile(path: string): Promise<boolean>;
     deleteDirectory(path: string): Promise<boolean>;
+    batchWrite(files: Record<string, string>, createDirs?: boolean): Promise<any>;
 }

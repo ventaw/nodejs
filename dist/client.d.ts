@@ -16,7 +16,7 @@ export declare class Client {
     private session;
     private maxRetries;
     constructor(options?: ClientOptions);
-    request<T = any>(method: "GET" | "POST" | "PUT" | "DELETE", path: string, data?: any, params?: any, options?: any): Promise<T>;
+    request<T = any>(method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH", path: string, data?: any, params?: any, options?: any): Promise<T>;
     private handleError;
 }
 export declare function getDefaultClient(): Client;

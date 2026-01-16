@@ -32,69 +32,39 @@ export class FileIO {
     }
 
     public async read(path: string, options?: { encoding?: "utf-8" | "base64" }): Promise<string> {
-        // We need to request blob/buffer. 
-        // Client request wrapper assumes JSON usually. 
-        // We might need to bypass or handle specific response type.
-        // For now, let's assume the client can handle text.
-        // If we need base64, we might need to fetch binary and convert.
-
-        // This is tricky with the current generic client. 
-        // Let's implement a workaround using the internal axios instance if possible, 
-        // or just use valid JSON endpoints if I had them. 
-        // But read is a stream. 
-
-        // Strategy: Use the client to get the download URL and fetch it? 
-        // Or assume client.request can handle 'responseType'.
-
-        // Let's try to use the 'read_file' MCP-style logic? No, SDK hits API.
-
-        // Workaround: 
-        // Since I cannot easily change the generic client.request signature here without seeing client.ts fully,
-        // I will assume standard fetch/axios behavior.
-
-        // Actually, for SDK consistency, I should have implemented /read and /write JSON endpoints in the API too.
-        // But since I didn't, I must make the SDK work with what I have.
-
-        const response = await this.client.request<any>(
+        const data = await this.client.request<{ content: string }>(
             "GET",
-            `/sandboxes/${this.sandboxId}/files/download`,
+            `/sandboxes/${this.sandboxId}/files/content`,
             undefined,
-            { path },
-            { responseType: options?.encoding === 'base64' ? 'arraybuffer' : 'text' }
+            { path }
         );
 
+        let content = data.content;
         if (options?.encoding === 'base64') {
-            // Convert arraybuffer to base64
-            return Buffer.from(response).toString('base64');
+            // If API returned text but we want base64, convert it
+            // Assuming API returns raw content as string
+            content = Buffer.from(content).toString('base64');
         }
-        return response as string;
+        return content;
     }
 
-    public async write(path: string, content: string, options?: { encoding?: "utf-8" | "base64" }): Promise<number> {
-        // Construct Multipart
-        const formData = new FormData();
-        let blob: Blob;
+    public async write(path: string, content: string, options?: { encoding?: "utf-8" | "base64" }): Promise<void> {
+        const payload = {
+            path: path,
+            content: content
+        };
 
-        if (options?.encoding === 'base64') {
-            const buffer = Buffer.from(content, 'base64');
-            blob = new Blob([buffer]);
-        } else {
-            blob = new Blob([content]);
-        }
+        // Note: encoding in payload is not currently supported by API JSON endpoint 
+        // but we can handle it here if needed.
 
-        formData.append('file', blob, path.split('/').pop() || 'file');
-
-        const data = await this.client.request<{ bytes_written: number }>(
+        await this.client.request(
             "POST",
-            `/sandboxes/${this.sandboxId}/files/upload`,
-            formData,
-            { path },
-            { headers: { "Content-Type": "multipart/form-data" } }
+            `/sandboxes/${this.sandboxId}/files/write`,
+            payload
         );
-        return data.bytes_written || 0;
     }
 
-    public async createDirectory(path: string): Promise<boolean> {
+    public async createDir(path: string): Promise<boolean> {
         await this.client.request(
             "POST",
             `/sandboxes/${this.sandboxId}/files/mkdir`,
@@ -104,23 +74,33 @@ export class FileIO {
         return true;
     }
 
-    public async deleteFile(path: string): Promise<boolean> {
+    public async createDirectory(path: string): Promise<boolean> {
+        return this.createDir(path);
+    }
+
+    public async delete(path: string, options?: { recursive?: boolean }): Promise<boolean> {
         await this.client.request(
             "DELETE",
             `/sandboxes/${this.sandboxId}/files`,
             undefined,
-            { path }
+            { path, recursive: options?.recursive }
         );
         return true;
     }
 
+    public async deleteFile(path: string): Promise<boolean> {
+        return this.delete(path);
+    }
+
     public async deleteDirectory(path: string): Promise<boolean> {
-        await this.client.request(
-            "DELETE",
-            `/sandboxes/${this.sandboxId}/files`,
-            undefined,
-            { path, recursive: true }
+        return this.delete(path, { recursive: true });
+    }
+
+    public async batchWrite(files: Record<string, string>, createDirs: boolean = true): Promise<any> {
+        return await this.client.request(
+            "POST",
+            `/sandboxes/${this.sandboxId}/files/batch`,
+            { files, create_dirs: createDirs }
         );
-        return true;
     }
 }

@@ -52,7 +52,7 @@ export class Client {
     }
 
     public async request<T = any>(
-        method: "GET" | "POST" | "PUT" | "DELETE",
+        method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
         path: string,
         data?: any,
         params?: any,

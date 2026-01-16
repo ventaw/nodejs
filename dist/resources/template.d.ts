@@ -1,16 +1,73 @@
+import { Resource } from "./base";
 export interface TemplateData {
-    code: string;
+    id: string;
+    code?: string;
+    user_id?: string;
+    is_system?: boolean;
+    is_public?: boolean;
+    use_count?: number;
     name: string;
     description?: string;
-    default_cpu?: number;
-    default_memory?: number;
+    icon?: string;
+    category?: string;
+    default_port?: number;
+    recommended_vcpu?: number;
+    recommended_mem_mib?: number;
+    startup_command?: string;
+    created_at?: string;
+    init_commands?: string[];
+    packages?: string[];
+    pip_packages?: string[];
+    npm_packages?: string[];
+    dockerfile?: string;
+    updated_at?: string;
 }
-export declare class Template {
-    code: string;
+export declare class Template extends Resource {
+    code?: string;
+    userId?: string;
+    isSystem?: boolean;
+    isPublic?: boolean;
+    useCount?: number;
     name: string;
     description?: string;
-    default_cpu?: number;
-    default_memory?: number;
+    icon?: string;
+    category?: string;
+    defaultPort?: number;
+    recommendedVcpu?: number;
+    recommendedMemMib?: number;
+    startupCommand?: string;
+    createdAt?: string;
+    initCommands?: string[];
+    packages?: string[];
+    pipPackages?: string[];
+    npmPackages?: string[];
+    dockerfile?: string;
+    updatedAt?: string;
     constructor(data: TemplateData);
-    static list(): Promise<Template[]>;
+    protected static getEndpoint(): string;
+    protected static getListKey(): string;
+    static create(options: {
+        name: string;
+        description: string;
+        category?: string;
+        icon?: string;
+        isPublic?: boolean;
+        defaultPort?: number;
+        recommendedVcpu?: number;
+        recommendedMemMib?: number;
+        startupCommand?: string;
+        initCommands?: string[];
+        packages?: string[];
+        pipPackages?: string[];
+        npmPackages?: string[];
+    }): Promise<Template>;
+    update(options: {
+        name?: string;
+        description?: string;
+        icon?: string;
+        category?: string;
+        isPublic?: boolean;
+        defaultPort?: number;
+        startupCommand?: string;
+    }): Promise<boolean>;
 }
