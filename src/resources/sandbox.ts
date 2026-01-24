@@ -9,6 +9,8 @@ export interface SandboxData {
     ip_address?: string;
     access_url?: string;
     created_at?: string;
+    internet_enabled?: boolean;
+    egress_profile?: string;
 }
 
 export class Sandbox {
@@ -19,6 +21,8 @@ export class Sandbox {
     public ip_address?: string;
     public access_url?: string;
     public created_at?: string;
+    public internet_enabled?: boolean;
+    public egress_profile?: string;
     private _client: Client;
 
     constructor(data: SandboxData) {
@@ -29,6 +33,8 @@ export class Sandbox {
         this.ip_address = data.ip_address;
         this.access_url = data.access_url;
         this.created_at = data.created_at;
+        this.internet_enabled = data.internet_enabled;
+        this.egress_profile = data.egress_profile;
         this._client = getDefaultClient();
     }
 
@@ -43,7 +49,9 @@ export class Sandbox {
         template: string,
         name: string,
         vcpu: number = 2,
-        memory: number = 2048
+        memory: number = 2048,
+        internet_enabled: boolean = false,
+        egress_profile: string = "none"
     ): Promise<Sandbox> {
         const client = getDefaultClient();
         const payload = {
@@ -51,6 +59,8 @@ export class Sandbox {
             name: name,
             vcpu_count: vcpu,
             mem_size_mib: memory,
+            internet_enabled: internet_enabled,
+            egress_profile: egress_profile,
         };
         const data = await client.request<SandboxData>("POST", "/sandboxes", payload);
         return new Sandbox(data);
@@ -238,6 +248,7 @@ export class Sandbox {
         name?: string;
         startupCommand?: string;
         internetEnabled?: boolean;
+        egressProfile?: string;
         vpcId?: string;
         defaultPort?: number;
     }): Promise<boolean> {
@@ -245,7 +256,9 @@ export class Sandbox {
         const payload: any = {};
         if (options.name !== undefined) payload.name = options.name;
         if (options.startupCommand !== undefined) payload.startup_command = options.startupCommand;
+        if (options.startupCommand !== undefined) payload.startup_command = options.startupCommand;
         if (options.internetEnabled !== undefined) payload.internet_enabled = options.internetEnabled;
+        if (options.egressProfile !== undefined) payload.egress_profile = options.egressProfile;
         if (options.vpcId !== undefined) payload.vpc_id = options.vpcId;
         if (options.defaultPort !== undefined) payload.default_port = options.defaultPort;
 
