@@ -1,6 +1,8 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from "axios";
 import { APIError, APIConnectionError, AuthenticationError } from "./error";
 
+import { SecretIO } from "./resources/secret_io";
+
 export interface ClientOptions {
     apiKey?: string;
     baseUrl?: string;
@@ -49,6 +51,10 @@ export class Client {
             (response) => response,
             (error) => this.handleError(error)
         );
+    }
+
+    public get secrets(): SecretIO {
+        return new SecretIO(this);
     }
 
     public async request<T = any>(

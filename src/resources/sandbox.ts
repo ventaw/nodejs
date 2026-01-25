@@ -1,5 +1,6 @@
 import { getDefaultClient, Client } from "../client";
 import { FileIO } from "./file_io";
+import { SecretIO } from "./secret_io";
 
 export interface SandboxData {
     id: string;
@@ -11,6 +12,10 @@ export interface SandboxData {
     created_at?: string;
     internet_enabled?: boolean;
     egress_profile?: string;
+}
+
+export interface ExecuteOptions {
+    timeout?: number;
 }
 
 export class Sandbox {
@@ -43,6 +48,10 @@ export class Sandbox {
             throw new Error("Sandbox ID is missing.");
         }
         return new FileIO(this._client, this.id);
+    }
+
+    public static get secrets(): SecretIO {
+        return getDefaultClient().secrets;
     }
 
     public static async create(
@@ -147,13 +156,23 @@ export class Sandbox {
     }
 
     // Execute
-    public async execute(code: string, language: string = "bash", useMcp: boolean = false): Promise<any> {
+    public async execute(code: string, language: string = "bash", optionsOrMcp?: ExecuteOptions | boolean): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+
+        const useMcp = typeof optionsOrMcp === "boolean" ? optionsOrMcp : false;
+        const options = typeof optionsOrMcp === "object" ? optionsOrMcp : undefined;
+
         if (useMcp) {
             const res = await this._mcpPost("execute_command", { sandbox_id: this.id, command: code });
             const content = res?.content || [];
             return { stdout: content.map((c: any) => c.text || "").join("\n") };
         }
-        return await this._client.request("POST", `/sandboxes/${this.id}/execute`, { code, language });
+
+        return await this._client.request("POST", `/sandboxes/${this.id}/execute`, {
+            code,
+            language,
+            timeout: options?.timeout
+        });
     }
 
     // PTY and sessions convenience
