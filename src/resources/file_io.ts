@@ -22,13 +22,17 @@ export class FileIO {
     }
 
     public async list(path: string = ".", options?: { recursive?: boolean }): Promise<FileItem[]> {
-        const data = await this.client.request<{ items: FileItem[] }>(
+        const data = await this.client.request<FileItem[] | { items: FileItem[] }>(
             "GET",
             `/sandboxes/${this.sandboxId}/files/list`,
             undefined,
             { path, recursive: options?.recursive }
         );
-        return data.items || [];
+
+        if (Array.isArray(data)) {
+            return data;
+        }
+        return (data as { items: FileItem[] }).items || [];
     }
 
     public async read(path: string, options?: { encoding?: "utf-8" | "base64" }): Promise<string> {
