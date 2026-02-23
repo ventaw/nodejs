@@ -13,6 +13,12 @@ export declare class FileIO {
     private client;
     private sandboxId;
     constructor(client: Client, sandboxId: string);
+    /**
+     * Normalize a file path to be relative to the workspace root.
+     * Converts absolute paths like "/.next" to relative ".next" so they
+     * resolve correctly inside the sandbox workspace boundary.
+     */
+    private normalizePath;
     list(path?: string, options?: {
         recursive?: boolean;
     }): Promise<FileItem[]>;

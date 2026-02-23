@@ -21,12 +21,26 @@ export class FileIO {
         this.sandboxId = sandboxId;
     }
 
+    /**
+     * Normalize a file path to be relative to the workspace root.
+     * Converts absolute paths like "/.next" to relative ".next" so they
+     * resolve correctly inside the sandbox workspace boundary.
+     */
+    private normalizePath(path: string): string {
+        if (path === "/") return ".";
+        // Strip leading slash to make it relative to workspace root
+        if (path.startsWith("/") && !path.startsWith("/sandbox/workspace") && !path.startsWith("/app")) {
+            return path.replace(/^\/+/, "");
+        }
+        return path;
+    }
+
     public async list(path: string = ".", options?: { recursive?: boolean }): Promise<FileItem[]> {
         const data = await this.client.request<FileItem[] | { items: FileItem[] }>(
             "GET",
             `/sandboxes/${this.sandboxId}/files/list`,
             undefined,
-            { path, recursive: options?.recursive }
+            { path: this.normalizePath(path), recursive: options?.recursive }
         );
 
         if (Array.isArray(data)) {
@@ -40,7 +54,7 @@ export class FileIO {
             "GET",
             `/sandboxes/${this.sandboxId}/files/content`,
             undefined,
-            { path }
+            { path: this.normalizePath(path) }
         );
 
         let content = data.content;
@@ -54,7 +68,7 @@ export class FileIO {
 
     public async write(path: string, content: string, options?: { encoding?: "utf-8" | "base64" }): Promise<void> {
         const payload = {
-            path: path,
+            path: this.normalizePath(path),
             content: content
         };
 
@@ -73,7 +87,7 @@ export class FileIO {
             "POST",
             `/sandboxes/${this.sandboxId}/files/mkdir`,
             undefined,
-            { path }
+            { path: this.normalizePath(path) }
         );
         return true;
     }
@@ -87,7 +101,7 @@ export class FileIO {
             "DELETE",
             `/sandboxes/${this.sandboxId}/files`,
             undefined,
-            { path, recursive: options?.recursive }
+            { path: this.normalizePath(path), recursive: options?.recursive }
         );
         return true;
     }

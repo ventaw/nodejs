@@ -6,12 +6,29 @@ class FileIO {
         this.client = client;
         this.sandboxId = sandboxId;
     }
+    /**
+     * Normalize a file path to be relative to the workspace root.
+     * Converts absolute paths like "/.next" to relative ".next" so they
+     * resolve correctly inside the sandbox workspace boundary.
+     */
+    normalizePath(path) {
+        if (path === "/")
+            return ".";
+        // Strip leading slash to make it relative to workspace root
+        if (path.startsWith("/") && !path.startsWith("/sandbox/workspace") && !path.startsWith("/app")) {
+            return path.replace(/^\/+/, "");
+        }
+        return path;
+    }
     async list(path = ".", options) {
-        const data = await this.client.request("GET", `/sandboxes/${this.sandboxId}/files/list`, undefined, { path, recursive: options === null || options === void 0 ? void 0 : options.recursive });
+        const data = await this.client.request("GET", `/sandboxes/${this.sandboxId}/files/list`, undefined, { path: this.normalizePath(path), recursive: options === null || options === void 0 ? void 0 : options.recursive });
+        if (Array.isArray(data)) {
+            return data;
+        }
         return data.items || [];
     }
     async read(path, options) {
-        const data = await this.client.request("GET", `/sandboxes/${this.sandboxId}/files/content`, undefined, { path });
+        const data = await this.client.request("GET", `/sandboxes/${this.sandboxId}/files/content`, undefined, { path: this.normalizePath(path) });
         let content = data.content;
         if ((options === null || options === void 0 ? void 0 : options.encoding) === 'base64') {
             // If API returned text but we want base64, convert it
@@ -22,7 +39,7 @@ class FileIO {
     }
     async write(path, content, options) {
         const payload = {
-            path: path,
+            path: this.normalizePath(path),
             content: content
         };
         // Note: encoding in payload is not currently supported by API JSON endpoint 
@@ -30,14 +47,14 @@ class FileIO {
         await this.client.request("POST", `/sandboxes/${this.sandboxId}/files/write`, payload);
     }
     async createDir(path) {
-        await this.client.request("POST", `/sandboxes/${this.sandboxId}/files/mkdir`, undefined, { path });
+        await this.client.request("POST", `/sandboxes/${this.sandboxId}/files/mkdir`, undefined, { path: this.normalizePath(path) });
         return true;
     }
     async createDirectory(path) {
         return this.createDir(path);
     }
     async delete(path, options) {
-        await this.client.request("DELETE", `/sandboxes/${this.sandboxId}/files`, undefined, { path, recursive: options === null || options === void 0 ? void 0 : options.recursive });
+        await this.client.request("DELETE", `/sandboxes/${this.sandboxId}/files`, undefined, { path: this.normalizePath(path), recursive: options === null || options === void 0 ? void 0 : options.recursive });
         return true;
     }
     async deleteFile(path) {
