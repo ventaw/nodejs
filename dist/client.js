@@ -7,6 +7,7 @@ exports.Client = exports.config = void 0;
 exports.getDefaultClient = getDefaultClient;
 const axios_1 = __importDefault(require("axios"));
 const error_1 = require("./error");
+const secret_io_1 = require("./resources/secret_io");
 // Global configuration storage
 exports.config = {
     apiKey: undefined,
@@ -35,6 +36,9 @@ class Client {
         });
         // Add interceptor for error handling
         this.session.interceptors.response.use((response) => response, (error) => this.handleError(error));
+    }
+    get secrets() {
+        return new secret_io_1.SecretIO(this);
     }
     async request(method, path, data, params, options) {
         let lastError;

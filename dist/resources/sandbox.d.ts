@@ -1,4 +1,5 @@
 import { FileIO } from "./file_io";
+import { SecretIO } from "./secret_io";
 export interface SandboxData {
     id: string;
     name?: string;
@@ -7,6 +8,11 @@ export interface SandboxData {
     ip_address?: string;
     access_url?: string;
     created_at?: string;
+    internet_enabled?: boolean;
+    egress_profile?: string;
+}
+export interface ExecuteOptions {
+    timeout?: number;
 }
 export declare class Sandbox {
     id: string;
@@ -16,10 +22,13 @@ export declare class Sandbox {
     ip_address?: string;
     access_url?: string;
     created_at?: string;
+    internet_enabled?: boolean;
+    egress_profile?: string;
     private _client;
     constructor(data: SandboxData);
     get files(): FileIO;
-    static create(template: string, name: string, vcpu?: number, memory?: number): Promise<Sandbox>;
+    static get secrets(): SecretIO;
+    static create(template: string, name: string, vcpu?: number, memory?: number, internet_enabled?: boolean, egress_profile?: string): Promise<Sandbox>;
     static get(id: string): Promise<Sandbox>;
     static list(): Promise<Sandbox[]>;
     delete(): Promise<boolean>;
@@ -31,7 +40,7 @@ export declare class Sandbox {
     createSshToken(ttlMinutes?: number): Promise<any>;
     listSshTokens(): Promise<any>;
     revokeSshToken(token: string): Promise<void>;
-    execute(code: string, language?: string, useMcp?: boolean): Promise<any>;
+    execute(code: string, language?: string, optionsOrMcp?: ExecuteOptions | boolean): Promise<any>;
     createPty(command?: string, cwd?: string, cols?: number, rows?: number): Promise<any>;
     sendPtyInput(ptyId: string, data: string): Promise<any>;
     resizePty(ptyId: string, cols: number, rows: number): Promise<any>;
@@ -54,6 +63,7 @@ export declare class Sandbox {
         name?: string;
         startupCommand?: string;
         internetEnabled?: boolean;
+        egressProfile?: string;
         vpcId?: string;
         defaultPort?: number;
     }): Promise<boolean>;

@@ -1,3 +1,4 @@
+import { SecretIO } from "./resources/secret_io";
 export interface ClientOptions {
     apiKey?: string;
     baseUrl?: string;
@@ -16,6 +17,7 @@ export declare class Client {
     private session;
     private maxRetries;
     constructor(options?: ClientOptions);
+    get secrets(): SecretIO;
     request<T = any>(method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH", path: string, data?: any, params?: any, options?: any): Promise<T>;
     private handleError;
 }

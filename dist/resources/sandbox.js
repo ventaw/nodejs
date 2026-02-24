@@ -12,6 +12,8 @@ class Sandbox {
         this.ip_address = data.ip_address;
         this.access_url = data.access_url;
         this.created_at = data.created_at;
+        this.internet_enabled = data.internet_enabled;
+        this.egress_profile = data.egress_profile;
         this._client = (0, client_1.getDefaultClient)();
     }
     get files() {
@@ -20,13 +22,18 @@ class Sandbox {
         }
         return new file_io_1.FileIO(this._client, this.id);
     }
-    static async create(template, name, vcpu = 2, memory = 2048) {
+    static get secrets() {
+        return (0, client_1.getDefaultClient)().secrets;
+    }
+    static async create(template, name, vcpu = 2, memory = 2048, internet_enabled = false, egress_profile = "none") {
         const client = (0, client_1.getDefaultClient)();
         const payload = {
             template_id: template,
             name: name,
             vcpu_count: vcpu,
             mem_size_mib: memory,
+            internet_enabled: internet_enabled,
+            egress_profile: egress_profile,
         };
         const data = await client.request("POST", "/sandboxes", payload);
         return new Sandbox(data);
@@ -103,13 +110,21 @@ class Sandbox {
         await this._client.request("DELETE", `/sandboxes/${this.id}/ssh-token`, undefined, { token });
     }
     // Execute
-    async execute(code, language = "bash", useMcp = false) {
+    async execute(code, language = "bash", optionsOrMcp) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        const useMcp = typeof optionsOrMcp === "boolean" ? optionsOrMcp : false;
+        const options = typeof optionsOrMcp === "object" ? optionsOrMcp : undefined;
         if (useMcp) {
             const res = await this._mcpPost("execute_command", { sandbox_id: this.id, command: code });
             const content = (res === null || res === void 0 ? void 0 : res.content) || [];
             return { stdout: content.map((c) => c.text || "").join("\n") };
         }
-        return await this._client.request("POST", `/sandboxes/${this.id}/execute`, { code, language });
+        return await this._client.request("POST", `/sandboxes/${this.id}/execute`, {
+            code,
+            language,
+            timeout: options === null || options === void 0 ? void 0 : options.timeout
+        });
     }
     // PTY and sessions convenience
     async createPty(command = "/bin/bash", cwd, cols = 80, rows = 24) {
@@ -193,8 +208,12 @@ class Sandbox {
             payload.name = options.name;
         if (options.startupCommand !== undefined)
             payload.startup_command = options.startupCommand;
+        if (options.startupCommand !== undefined)
+            payload.startup_command = options.startupCommand;
         if (options.internetEnabled !== undefined)
             payload.internet_enabled = options.internetEnabled;
+        if (options.egressProfile !== undefined)
+            payload.egress_profile = options.egressProfile;
         if (options.vpcId !== undefined)
             payload.vpc_id = options.vpcId;
         if (options.defaultPort !== undefined)
