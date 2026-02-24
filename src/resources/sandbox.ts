@@ -18,6 +18,62 @@ export interface ExecuteOptions {
     timeout?: number;
 }
 
+// --- Structured Git Types ---
+
+export interface DiffFile {
+    path: string;
+    status: string;
+    additions: number;
+    deletions: number;
+    patch: string;
+    old_path?: string;
+}
+
+export interface DiffStats {
+    additions: number;
+    deletions: number;
+    files_changed: number;
+}
+
+export interface DiffResult {
+    files: DiffFile[];
+    stats: DiffStats;
+}
+
+export interface FileStatusEntry {
+    path: string;
+    status: string;
+    staged: boolean;
+}
+
+export interface GitStatusResponse {
+    files: FileStatusEntry[];
+}
+
+export interface CommitInfo {
+    sha: string;
+    message: string;
+    author: string;
+    date: string;
+    files?: string[];
+}
+
+export interface GitLogResponse {
+    commits: CommitInfo[];
+}
+
+export interface BlameLine {
+    line: number;
+    sha: string;
+    author: string;
+    date: string;
+    content: string;
+}
+
+export interface GitBlameResponse {
+    lines: BlameLine[];
+}
+
 export class Sandbox {
     public id: string;
     public name?: string;
@@ -303,6 +359,47 @@ export class Sandbox {
     public async gitPull(): Promise<any> {
         if (!this.id) throw new Error("Sandbox ID is missing.");
         return await this._client.request("POST", `/sandboxes/${this.id}/git/pull`);
+    }
+
+    // --- Structured Git Operations ---
+
+    public async gitDiff(options?: { path?: string; staged?: boolean }): Promise<DiffResult> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request<DiffResult>("POST", `/sandboxes/${this.id}/git/diff`, {
+            path: options?.path ?? null,
+            staged: options?.staged ?? false,
+        });
+    }
+
+    public async gitStatusStructured(): Promise<GitStatusResponse> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request<GitStatusResponse>("GET", `/sandboxes/${this.id}/git/status/structured`);
+    }
+
+    public async gitDiffBranches(base: string, compare?: string, path?: string): Promise<DiffResult> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request<DiffResult>("POST", `/sandboxes/${this.id}/git/diff-branches`, {
+            base,
+            compare: compare ?? null,
+            path: path ?? null,
+        });
+    }
+
+    public async gitLogStructured(options?: { limit?: number; branch?: string }): Promise<GitLogResponse> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        const params: Record<string, any> = {};
+        if (options?.limit !== undefined) params.limit = options.limit;
+        if (options?.branch) params.branch = options.branch;
+        return await this._client.request<GitLogResponse>("GET", `/sandboxes/${this.id}/git/log/structured`, undefined, params);
+    }
+
+    public async gitBlame(file: string, startLine?: number, endLine?: number): Promise<GitBlameResponse> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request<GitBlameResponse>("POST", `/sandboxes/${this.id}/git/blame`, {
+            file,
+            start_line: startLine ?? null,
+            end_line: endLine ?? null,
+        });
     }
 
     // Advanced file operations

@@ -241,6 +241,49 @@ class Sandbox {
             throw new Error("Sandbox ID is missing.");
         return await this._client.request("POST", `/sandboxes/${this.id}/git/pull`);
     }
+    // --- Structured Git Operations ---
+    async gitDiff(options) {
+        var _a, _b;
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("POST", `/sandboxes/${this.id}/git/diff`, {
+            path: (_a = options === null || options === void 0 ? void 0 : options.path) !== null && _a !== void 0 ? _a : null,
+            staged: (_b = options === null || options === void 0 ? void 0 : options.staged) !== null && _b !== void 0 ? _b : false,
+        });
+    }
+    async gitStatusStructured() {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/git/status/structured`);
+    }
+    async gitDiffBranches(base, compare, path) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("POST", `/sandboxes/${this.id}/git/diff-branches`, {
+            base,
+            compare: compare !== null && compare !== void 0 ? compare : null,
+            path: path !== null && path !== void 0 ? path : null,
+        });
+    }
+    async gitLogStructured(options) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        const params = {};
+        if ((options === null || options === void 0 ? void 0 : options.limit) !== undefined)
+            params.limit = options.limit;
+        if (options === null || options === void 0 ? void 0 : options.branch)
+            params.branch = options.branch;
+        return await this._client.request("GET", `/sandboxes/${this.id}/git/log/structured`, undefined, params);
+    }
+    async gitBlame(file, startLine, endLine) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("POST", `/sandboxes/${this.id}/git/blame`, {
+            file,
+            start_line: startLine !== null && startLine !== void 0 ? startLine : null,
+            end_line: endLine !== null && endLine !== void 0 ? endLine : null,
+        });
+    }
     // Advanced file operations
     async grep(pattern, path = "/", recursive = true) {
         if (!this.id)
@@ -255,6 +298,45 @@ class Sandbox {
         if (!this.id)
             throw new Error("Sandbox ID is missing.");
         return await this._client.request("GET", `/sandboxes/${this.id}/files/tree`, undefined, { path });
+    }
+    // Code Intelligence (CodeRLM)
+    async codeStructure() {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/structure`);
+    }
+    async codeSymbols(file) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/symbols`, undefined, { file });
+    }
+    async codeSymbolSearch(query) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/symbols/search`, undefined, { q: query });
+    }
+    async codeImplementation(symbol, file) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/symbols/implementation`, undefined, { symbol, file });
+    }
+    async codeCallers(symbol, file) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/symbols/callers`, undefined, { symbol, file });
+    }
+    async codePeek(file, startLine, endLine) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/peek`, undefined, { file, start: startLine, end: endLine });
+    }
+    async codeGrep(pattern, path) {
+        if (!this.id)
+            throw new Error("Sandbox ID is missing.");
+        const params = { pattern };
+        if (path)
+            params.path = path;
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/grep`, undefined, params);
     }
 }
 exports.Sandbox = Sandbox;

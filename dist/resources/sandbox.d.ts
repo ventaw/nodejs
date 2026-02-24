@@ -14,6 +14,51 @@ export interface SandboxData {
 export interface ExecuteOptions {
     timeout?: number;
 }
+export interface DiffFile {
+    path: string;
+    status: string;
+    additions: number;
+    deletions: number;
+    patch: string;
+    old_path?: string;
+}
+export interface DiffStats {
+    additions: number;
+    deletions: number;
+    files_changed: number;
+}
+export interface DiffResult {
+    files: DiffFile[];
+    stats: DiffStats;
+}
+export interface FileStatusEntry {
+    path: string;
+    status: string;
+    staged: boolean;
+}
+export interface GitStatusResponse {
+    files: FileStatusEntry[];
+}
+export interface CommitInfo {
+    sha: string;
+    message: string;
+    author: string;
+    date: string;
+    files?: string[];
+}
+export interface GitLogResponse {
+    commits: CommitInfo[];
+}
+export interface BlameLine {
+    line: number;
+    sha: string;
+    author: string;
+    date: string;
+    content: string;
+}
+export interface GitBlameResponse {
+    lines: BlameLine[];
+}
 export declare class Sandbox {
     id: string;
     name?: string;
@@ -70,6 +115,24 @@ export declare class Sandbox {
     gitClone(repoUrl: string, targetDir: string): Promise<any>;
     gitStatus(): Promise<any>;
     gitPull(): Promise<any>;
+    gitDiff(options?: {
+        path?: string;
+        staged?: boolean;
+    }): Promise<DiffResult>;
+    gitStatusStructured(): Promise<GitStatusResponse>;
+    gitDiffBranches(base: string, compare?: string, path?: string): Promise<DiffResult>;
+    gitLogStructured(options?: {
+        limit?: number;
+        branch?: string;
+    }): Promise<GitLogResponse>;
+    gitBlame(file: string, startLine?: number, endLine?: number): Promise<GitBlameResponse>;
     grep(pattern: string, path?: string, recursive?: boolean): Promise<any>;
     getFileTree(path?: string): Promise<any>;
+    codeStructure(): Promise<any>;
+    codeSymbols(file: string): Promise<any>;
+    codeSymbolSearch(query: string): Promise<any>;
+    codeImplementation(symbol: string, file: string): Promise<any>;
+    codeCallers(symbol: string, file: string): Promise<any>;
+    codePeek(file: string, startLine: number, endLine: number): Promise<any>;
+    codeGrep(pattern: string, path?: string): Promise<any>;
 }
