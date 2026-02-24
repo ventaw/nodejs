@@ -319,4 +319,43 @@ export class Sandbox {
         if (!this.id) throw new Error("Sandbox ID is missing.");
         return await this._client.request("GET", `/sandboxes/${this.id}/files/tree`, undefined, { path });
     }
+
+    // Code Intelligence (CodeRLM)
+
+    public async codeStructure(): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/structure`);
+    }
+
+    public async codeSymbols(file: string): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/symbols`, undefined, { file });
+    }
+
+    public async codeSymbolSearch(query: string): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/symbols/search`, undefined, { q: query });
+    }
+
+    public async codeImplementation(symbol: string, file: string): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/symbols/implementation`, undefined, { symbol, file });
+    }
+
+    public async codeCallers(symbol: string, file: string): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/symbols/callers`, undefined, { symbol, file });
+    }
+
+    public async codePeek(file: string, startLine: number, endLine: number): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/peek`, undefined, { file, start: startLine, end: endLine });
+    }
+
+    public async codeGrep(pattern: string, path?: string): Promise<any> {
+        if (!this.id) throw new Error("Sandbox ID is missing.");
+        const params: Record<string, any> = { pattern };
+        if (path) params.path = path;
+        return await this._client.request("GET", `/sandboxes/${this.id}/code/grep`, undefined, params);
+    }
 }
