@@ -22,6 +22,7 @@ Object.defineProperty(exports, "getDefaultClient", { enumerable: true, get: func
 __exportStar(require("./error"), exports);
 __exportStar(require("./resources/sandbox"), exports);
 __exportStar(require("./resources/template"), exports);
+__exportStar(require("./resources/database"), exports);
 __exportStar(require("./resources/file_io"), exports);
 __exportStar(require("./resources/secret_io"), exports);
 __exportStar(require("./resources/queue"), exports);
