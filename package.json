@@ -31,6 +31,6 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ventaw/ventaw-js.git"
+    "url": "git+https://github.com/ventaw/nodejs.git"
   }
 }
