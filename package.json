@@ -9,7 +9,13 @@
     "prepare": "npm run build",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "ventaw",
+    "sandbox",
+    "ai-agents",
+    "firecracker",
+    "sdk"
+  ],
   "author": "Ventaw",
   "license": "MIT",
   "dependencies": {
@@ -22,5 +28,9 @@
   },
   "files": [
     "dist"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ventaw/ventaw-js.git"
+  }
 }
